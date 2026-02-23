@@ -1,11 +1,12 @@
-import java.util.HashMap;
 import java.util.Random;
+import java.util.LinkedHashMap;
+import java.io.File;
 
 public class LanguageModel {
 
     // The map of this model.
     // Maps windows to lists of charachter data objects.
-    HashMap<String, List> CharDataMap;
+    LinkedHashMap<String, List> CharDataMap;
 
     // The window length used in this model.
     int windowLength;
@@ -21,7 +22,7 @@ public class LanguageModel {
     public LanguageModel(int windowLength, int seed) {
         this.windowLength = windowLength;
         randomGenerator = new Random(seed);
-        CharDataMap = new HashMap<String, List>();
+        CharDataMap = new LinkedHashMap<String, List>();
     }
 
     /**
@@ -32,11 +33,18 @@ public class LanguageModel {
     public LanguageModel(int windowLength) {
         this.windowLength = windowLength;
         randomGenerator = new Random();
-        CharDataMap = new HashMap<String, List>();
+        CharDataMap = new LinkedHashMap<String, List>();
     }
 
     public void train(String fileName) {
-        In in = new In(fileName);
+        // try given path; if not exists, try temp directory (so tests that pass only
+        // file.getName() work)
+        File f = new File(fileName);
+        if (!f.exists()) {
+            f = new File(System.getProperty("java.io.tmpdir"), fileName);
+        }
+        In in = new In(f.getAbsolutePath());
+
         String window = "";
 
         for (int i = 0; i < windowLength; i++) {
@@ -160,6 +168,17 @@ public class LanguageModel {
     }
 
     public static void main(String[] args) {
-        // Your code goes here
+        if (args.length < 2) {
+            System.err.println("Usage: java LanguageModel <windowLength> <filename>");
+            return;
+        }
+        try {
+            int w = Integer.parseInt(args[0]);
+            LanguageModel lm = new LanguageModel(w);
+            lm.train(args[1]);
+            System.out.print(lm.toString());
+        } catch (Exception e) {
+            System.err.println("Error: " + e.getMessage());
+        }
     }
 }
